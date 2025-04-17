@@ -140,9 +140,18 @@
 			
 			$fileContent              = file_get_contents($extendFile);
 			$extenderPrefix           = 'Core File Extender';
-			$extendNameVersion        = "### $extenderPrefix - $extendName # v$extendVersion ###";
-			$extendNameWithoutVersion = "### $extenderPrefix - $extendName #";
-			$extendContentEnd         = "### END $extenderPrefix ###";
+			
+			if(str_ends_with(strtolower($extendFile), '.xml'))
+			{
+				$extendNameVersion        = "<!-- $extenderPrefix - $extendName # v$extendVersion -->";
+				$extendNameWithoutVersion = "<!-- $extenderPrefix - $extendName -->";
+				$extendContentEnd         = "<!-- END $extenderPrefix -->";
+			} else
+			{
+				$extendNameVersion        = "### $extenderPrefix - $extendName # v$extendVersion ###";
+				$extendNameWithoutVersion = "### $extenderPrefix - $extendName #";
+				$extendContentEnd         = "### END $extenderPrefix ###";
+			}
 			
 			if (str_contains($fileContent, $extendNameVersion))
 			{
