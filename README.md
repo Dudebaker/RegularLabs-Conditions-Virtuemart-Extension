@@ -1,6 +1,6 @@
 # RegularLabs Conditions Virtuemart Extension
 
-The RegularLabs Conditions Extension does not deliver the ability restrict the conditions by Virtuemart parameters.<br>
+The RegularLabs Conditions Extension (used in Advanced Module Manager, Conditional Content, ...) does not deliver the ability restrict the conditions by Virtuemart parameters.<br>
 
 This system plugin adds conditions for the following:<br>
 - Page Type (Product, Category, Shopping Cart)
