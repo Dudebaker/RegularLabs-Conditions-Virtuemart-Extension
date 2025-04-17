@@ -44,6 +44,7 @@
 		{
 			/** @var VirtueMartModelProduct $modelProduct */
 			$modelProduct = VmModel::getModel('Product');
+			$modelProduct->_noLimit = true;
 			
 			$products = $modelProduct->getProducts($values, false, false);
 			$items    = $this->getMappedProducts($products);
@@ -53,11 +54,24 @@
 		
 		protected function getOptions()
 		{
+			$query = $this->db->getQuery(true)
+			                  ->select('COUNT(*)')
+			                  ->from('#__virtuemart_products AS p')
+			                  ->where('p.published = 1');
+			$this->db->setQuery($query);
+			$total = $this->db->loadResult();
+			
+			if ($total > $this->max_list_count)
+			{
+				return -1;
+			}
 			
 			/** @var VirtueMartModelProduct $modelProduct */
 			$modelProduct = VmModel::getModel('Product');
+			$modelProduct->_noLimit = true;
 			
 			$productIds = $modelProduct->sortSearchListQuery();
+			
 			$products   = $modelProduct->getProducts($productIds, false, false);
 			$items      = $this->getMappedProducts($products);
 			
