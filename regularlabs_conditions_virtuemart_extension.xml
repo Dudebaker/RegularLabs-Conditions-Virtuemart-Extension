@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" group="system" method="upgrade">
+    <name>PLG_SYSTEM_REGULARLABS_CONDITIONS_VIRTUEMART_EXTENSION</name>
+    <author>Dudebaker</author>
+    <authorEmail>@</authorEmail>
+    <authorUrl>w</authorUrl>
+    <creationDate>2025-02</creationDate>
+    <copyright>(C) Open Source Matters, Inc.</copyright>
+    <license>GNU General Public License version 2 or later</license>
+    <version>1.0.0</version>    
+    <description>PLG_SYSTEM_REGULARLABS_CONDITIONS_VIRTUEMART_EXTENSION_XML_DESCRIPTION</description>
+    <namespace path="src">Joomla\Plugin\System\RegularLabsConditionsVirtuemartExtension</namespace>
+    <files>
+        <folder plugin="regularlabs_conditions_virtuemart_extension">services</folder>
+        <folder>src</folder>
+        <folder>language</folder>
+    </files>
+    <scriptfile>src/Script.php</scriptfile>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="check_core_extension" type="radio" default="1" label="PLG_SYSTEM_REGULARLABS_CONDITIONS_VIRTUEMART_EXTENSION_CORE_FILE_EXTENSION_LABEL" description="PLG_SYSTEM_REGULARLABS_CONDITIONS_VIRTUEMART_EXTENSION_CORE_FILE_EXTENSION_DESC">
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                </field>
+            </fieldset>
+        </fields>
+    </config>
+</extension>
