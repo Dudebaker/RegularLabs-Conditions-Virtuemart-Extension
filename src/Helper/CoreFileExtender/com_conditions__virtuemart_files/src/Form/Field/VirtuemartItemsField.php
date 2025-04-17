@@ -45,7 +45,7 @@
 			/** @var VirtueMartModelProduct $modelProduct */
 			$modelProduct = VmModel::getModel('Product');
 			
-			$products = $modelProduct->getProducts($values, true, false);
+			$products = $modelProduct->getProducts($values, false, false);
 			$items    = $this->getMappedProducts($products);
 			
 			return Form::getNamesWithExtras($items, ['category', 'unpublished']);
@@ -58,7 +58,7 @@
 			$modelProduct = VmModel::getModel('Product');
 			
 			$productIds = $modelProduct->sortSearchListQuery();
-			$products   = $modelProduct->getProducts($productIds, true, false);
+			$products   = $modelProduct->getProducts($productIds, false, false);
 			$items      = $this->getMappedProducts($products);
 			
 			return $this->getOptionsByList($items, ['category', 'id', 'unpublished'], -2);
