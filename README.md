@@ -12,7 +12,7 @@ Additionally you can force a re-add via the plugin settings.
 
 <br>
 
-[![Download RegularLabs Conditions Virtuemart Extension](https://img.shields.io/github/v/release/Dudebaker/RegularLabs-Conditions-Virtuemart-Extension?logo=github&label=Download%20Breakdesigns%20Product%20Builder%20System%20Plugin&color=blueviolet&style=for-the-badge)](https://github.com/Dudebaker/RegularLabs-Conditions-Virtuemart-Extension/releases/download/v1.0.0/plg_system_regularlabs_conditions_virtuemart_extension.zip)
+[![Download RegularLabs Conditions Virtuemart Extension](https://img.shields.io/github/v/release/Dudebaker/RegularLabs-Conditions-Virtuemart-Extension?logo=github&label=Download%20RegularLabs%20Conditions%20Virtuemart%20Extension&color=blueviolet&style=for-the-badge)](https://github.com/Dudebaker/RegularLabs-Conditions-Virtuemart-Extension/releases/download/v1.0.0/plg_system_regularlabs_conditions_virtuemart_extension.zip)
 
 <b>Tested with:</b><br> 
 [![](https://img.shields.io/badge/Joomla-v5.1-4E5C6B?logo=joomla&logoColor=white&style=for-the-badge)](https://downloads.joomla.org/)<br>
