@@ -146,8 +146,6 @@
 			$db->setQuery($query);
 			$db->execute();
 			
-			$this->getApplication()?->enqueueMessage(Text::_('Core file extender checked'));
-			
 			return true;
 		}
 		#endregion		

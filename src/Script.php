@@ -162,7 +162,6 @@
 			
 			if ($extension->store())
 			{
-				\Joomla\Plugin\System\RegularLabsConditionsVirtuemartExtension\Helper\CoreFileExtenderHelper::checkOverrides(null, true);
 				return;
 			}
 			

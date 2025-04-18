@@ -11,7 +11,9 @@
 	/** @noinspection HtmlUnknownAttribute */
 	/** @noinspection PhpConditionAlreadyCheckedInspection */
 	
+	use Joomla\CMS\Factory;
 	use Joomla\CMS\Installer\Installer;
+	use Joomla\CMS\Language\Text;
 	use Joomla\Plugin\System\RegularLabsConditionsVirtuemartExtension\Helper\CoreFileExtenderHelper;
 	
 	/**
@@ -38,15 +40,15 @@
 	{
 		
 		$extendVersion  = 1.0;
-		$extensionNames = ['conditions', 'pkg_conditions'];
+		$extensionNames = ['PLG_SYSTEM_REGULARLABS_CONDITIONS_VIRTUEMART_EXTENSION', 'conditions', 'pkg_conditions'];
 		
 		// administrator/components/com_conditions/config.xml
 		$extendName    = 'Virtuemart-Extension - CON_3RD_PARTY_EXTENSIONS';
 		$extendContent = ['<option value="virtuemart">CON_VIRTUEMART</option>'];
 		$extendFile    = 'administrator' . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'com_conditions' . DIRECTORY_SEPARATOR . 'config.xml';
-		$extendBefore  = '<option value="zoo">CON_ZOO</option>';
+		$extendAfter   = '<option value="hikashop">CON_HIKASHOP</option>';
 		
-		CoreFileExtenderHelper::handleCoreFileExtender($installer, $extensionNames, $extendName, $extendContent, $extendFile, $extendBefore, null, $extendVersion, $force);
+		CoreFileExtenderHelper::handleCoreFileExtender($installer, $extensionNames, $extendName, $extendContent, $extendFile, null, $extendAfter, $extendVersion, $force);
 		
 		
 		// administrator/components/com_conditions/forms/item_rule.xml [Group]
@@ -99,7 +101,7 @@
 		                  '',
 		                  '<field name="@showon__virtuemart__b" type="ShowOn" />'];
 		$extendFile    = 'administrator' . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'com_conditions' . DIRECTORY_SEPARATOR . 'forms' . DIRECTORY_SEPARATOR . 'item_rule.xml';
-		$extendAfter   = '<field name="@showon__zoo__b" type="ShowOn" />';
+		$extendAfter   = '<field name="@showon__hikashop__b" type="ShowOn" />';
 		
 		CoreFileExtenderHelper::handleCoreFileExtender($installer, $extensionNames, $extendName, $extendContent, $extendFile, null, $extendAfter, $extendVersion, $force);
 		
@@ -112,7 +114,7 @@
 		                  '    <option value="virtuemart__item" class="check_enabled" group_name="CON_VIRTUEMART">CON_PRODUCTS</option>',
 		                  '</group>'];
 		$extendFile    = 'administrator' . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'com_conditions' . DIRECTORY_SEPARATOR . 'forms' . DIRECTORY_SEPARATOR . 'item_rule.xml';
-		$extendBefore  = '<group label="CON_ZOO">';
+		$extendBefore  = '<group label="CON_HIKASHOP">';
 		
 		CoreFileExtenderHelper::handleCoreFileExtender($installer, $extensionNames, $extendName, $extendContent, $extendFile, $extendBefore, null, $extendVersion, $force);
 		
@@ -135,7 +137,7 @@
 		                  '    self::addRuleBasic(\'virtuemart__item\', \'assignto_virtuemartproducts\', $params, $groups);',
 		                  '}'];
 		$extendFile    = 'administrator' . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'com_conditions' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Helper' . DIRECTORY_SEPARATOR . 'ConvertAssignments.php';
-		$extendBefore  = 'if (empty($excludes[\'zoo\']))';
+		$extendBefore  = 'if (empty($excludes[\'hikashop\']))';
 		
 		CoreFileExtenderHelper::handleCoreFileExtender($installer, $extensionNames, $extendName, $extendContent, $extendFile, $extendBefore, null, $extendVersion, $force);
 	
@@ -144,4 +146,7 @@
 		$source      = __DIR__ . DIRECTORY_SEPARATOR . 'com_conditions__virtuemart_files';
 		$destination = JPATH_ROOT . DIRECTORY_SEPARATOR . 'administrator' . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'com_conditions';
 		CoreFileExtenderHelper::handleFileCopy($installer, $extensionNames, $source, $destination, $force);
+		
+		
+		Factory::getApplication()?->enqueueMessage(Text::_('<p>RegularLabs Conditions Virtuemart Extension System Plugin</p><p><strong>Core files extended!</strong></p>'));
 	}
