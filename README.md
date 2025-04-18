@@ -6,13 +6,14 @@ This system plugin adds conditions for the following:<br>
 - Page Type (Product, Category, Shopping Cart)
 - Products
 - Categories
+- BreakDesigns CustomFilter
 
 The plugin automatically adds the needed core-hacks and re-adds them if conditions is updated or installed.<br>
 Additionally you can force a re-add via the plugin settings.
 
 <br>
 
-[![Download RegularLabs Conditions Virtuemart Extension](https://img.shields.io/github/v/release/Dudebaker/RegularLabs-Conditions-Virtuemart-Extension?logo=github&label=Download%20RegularLabs%20Conditions%20Virtuemart%20Extension&color=blueviolet&style=for-the-badge)](https://github.com/Dudebaker/RegularLabs-Conditions-Virtuemart-Extension/releases/download/v1.0.0/plg_system_regularlabs_conditions_virtuemart_extension.zip)
+[![Download RegularLabs Conditions Virtuemart Extension](https://img.shields.io/github/v/release/Dudebaker/RegularLabs-Conditions-Virtuemart-Extension?logo=github&label=Download%20RegularLabs%20Conditions%20Virtuemart%20Extension&color=blueviolet&style=for-the-badge)](https://github.com/Dudebaker/RegularLabs-Conditions-Virtuemart-Extension/releases/download/v1.1.0/plg_system_regularlabs_conditions_virtuemart_extension.zip)
 
 <b>Tested with:</b><br> 
 [![](https://img.shields.io/badge/Joomla-v5.1-4E5C6B?logo=joomla&logoColor=white&style=for-the-badge)](https://downloads.joomla.org/)<br>

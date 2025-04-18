@@ -23,7 +23,7 @@
 		
 		public function pass() : bool
 		{
-			if (RL_Input::getCmd('option') !== 'com_virtuemart')
+			if (RL_Input::getCmd('option') !== 'com_virtuemart' && RL_Input::getCmd('option') !== 'com_customfilters')
 			{
 				return false;
 			}
