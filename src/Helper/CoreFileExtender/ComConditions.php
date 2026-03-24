@@ -150,5 +150,7 @@
 		CoreFileExtenderHelper::handleFileCopy($installer, $extensionNames, $source, $destination, $force);
 		
 		
-		Factory::getApplication()?->enqueueMessage(Text::_('<p>RegularLabs Conditions Virtuemart Extension System Plugin</p><p><strong>Core files extended!</strong></p>'));
+		if($force || CoreFileExtenderHelper::checkInstaller($installer, $extensionNames)) {
+			Factory::getApplication()?->enqueueMessage(Text::_('<p>RegularLabs Conditions Virtuemart Extension System Plugin</p><p><strong>Core files extended!</strong></p>'));
+		}
 	}

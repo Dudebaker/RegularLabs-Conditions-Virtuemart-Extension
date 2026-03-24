@@ -33,7 +33,7 @@
 		 */
 		public static function checkOverrides($installer = null, bool $force = false) : void
 		{
-			$directory            = __DIR__ . DS . 'CoreFileExtender';
+			$directory            = __DIR__ . DIRECTORY_SEPARATOR . 'CoreFileExtender';
 			$coreFilExtenderFiles = scandir($directory);
 			
 			foreach ($coreFilExtenderFiles as $coreFilExtenderFile)
@@ -43,7 +43,7 @@
 					continue;
 				}
 				
-				require_once $directory . DS . $coreFilExtenderFile;
+				require_once $directory . DIRECTORY_SEPARATOR . $coreFilExtenderFile;
 				
 				$functionName = substr($coreFilExtenderFile, 0, -4);
 				
@@ -131,7 +131,7 @@
 				return;
 			}
 			
-			$extendFile = JPATH_ROOT . DS . $extendFile;
+			$extendFile = JPATH_ROOT . DIRECTORY_SEPARATOR . $extendFile;
 			
 			if (!file_exists($extendFile))
 			{

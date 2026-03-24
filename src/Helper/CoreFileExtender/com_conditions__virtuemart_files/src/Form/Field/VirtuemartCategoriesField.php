@@ -87,7 +87,7 @@
 			
 			/** @var VirtueMartModelCategory $modelCategory */
 			$modelCategory = VmModel::getModel('Category');
-			$categoryTree  = $modelCategory->getCategoryTree();
+			$categoryTree  = $modelCategory->getCategoryTree(limitStart: 0, limit: 0);
 			
 			if (count($categoryTree) > $this->max_list_count)
 			{
