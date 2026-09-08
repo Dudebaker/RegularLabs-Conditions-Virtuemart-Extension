@@ -15,7 +15,6 @@
 	defined('_JEXEC') or die;
 	
 	use RegularLabs\Component\Conditions\Administrator\Condition\Condition;
-	use RegularLabs\Component\Conditions\Administrator\Condition\Traits\isContent;
 	
 	abstract class Virtuemart extends Condition
 	{

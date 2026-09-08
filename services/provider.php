@@ -1,7 +1,6 @@
 <?php
 	/**
 	 * @package         RegularLabs-Conditions-Virtuemart-Extension
-	 * @subpackage      System.regular_labs_conditions_virtuemart_extension
 	 *
 	 * @copyright   (C) Open Source Matters, Inc.
 	 * @license         GNU General Public License version 2 or later
@@ -10,6 +9,7 @@
 	use Joomla\CMS\Extension\PluginInterface;
 	use Joomla\CMS\Factory;
 	use Joomla\CMS\Plugin\PluginHelper;
+	use Joomla\Database\DatabaseInterface;
 	use Joomla\DI\Container;
 	use Joomla\DI\ServiceProviderInterface;
 	use Joomla\Event\DispatcherInterface;
@@ -21,7 +21,6 @@
 	{
 		/**
 		 * {@inheritdoc}
-		 * @since version
 		 */
 		public function register(Container $container) : void
 		{
@@ -33,6 +32,7 @@
 					$plugin     = new RegularLabsConditionsVirtuemartExtension($dispatcher, (array)PluginHelper::getPlugin('system', 'regularlabs_conditions_virtuemart_extension'));
 					
 					$plugin->setApplication(Factory::getApplication());
+					$plugin->setDatabase($container->get(DatabaseInterface::class));
 					
 					return $plugin;
 				}

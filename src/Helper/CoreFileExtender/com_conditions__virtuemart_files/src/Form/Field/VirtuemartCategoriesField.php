@@ -72,7 +72,7 @@
 				
 				foreach ($category->parents as $parent)
 				{
-					$tmp->name = $parent->category_name . ' &rarr; ' . $tmp->name;
+					$tmp->name = $parent->category_name . ' → ' . $tmp->name;
 				}
 				
 				$categories[] = $tmp;

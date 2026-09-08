@@ -1,12 +1,13 @@
 <?php
 	/**
-	 * @package         plg_system_breakdesignsproductbuilder
+	 * @package         RegularLabs-Conditions-Virtuemart-Extension
 	 *
 	 * @copyright   (C) Open Source Matters, Inc.
 	 * @license         GNU General Public License version 2 or later
 	 */
 	
 	/** @noinspection PhpUnused */
+	/** @noinspection AutoloadingIssuesInspection */
 	
 	defined('_JEXEC') or die;
 	
@@ -18,9 +19,9 @@
 	
 	class PlgSystemRegularLabs_Conditions_Virtuemart_ExtensionInstallerScript
 	{
-		public const MAX_VERSION_JOOMLA = '6.0.0';
-		public const MIN_VERSION_JOOMLA = '5.1.0';
-		public const MIN_VERSION_PHP = '8.2.0';
+		public const string MAX_VERSION_JOOMLA = '6.0.0';
+		public const string MIN_VERSION_JOOMLA = '5.1.0';
+		public const string MIN_VERSION_PHP = '8.3.0';
 		
 		protected string $extensionName = 'RegularLabs Conditions Virtuemart Extension System Plugin';
 		
@@ -38,7 +39,7 @@
 		 *
 		 * @return bool
 		 * @throws Exception
-		 * @since version
+		 * @noinspection PhpUnusedParameterInspection
 		 */
 		public function preflight(string $type, object $parent) : bool
 		{
@@ -68,7 +69,7 @@
 		 *
 		 * @return void
 		 * @throws \Exception
-		 * @since version
+		 * @noinspection PhpUnusedParameterInspection
 		 */
 		public function postflight(string $type, object $parent) : void
 		{
@@ -78,17 +79,22 @@
 			}
 			
 			$this->enableExtension();
+			
+			if (in_array($type, ['install', 'update'], true))
+			{
+				/** @noinspection PhpFullyQualifiedNameUsageInspection */
+				\Joomla\Plugin\System\RegularLabsConditionsVirtuemartExtension\Helper\CoreFileExtenderHelper::ensureOverrides();
+			}
 		}
 		#endregion
 		
 		#region Helper function
 		
 		/**
-		 * Checks whether the Joomla! version meets the requirement
+		 * Checks whether the Joomla! This version meets the requirement
 		 *
 		 * @return bool
 		 * @throws Exception
-		 * @since version
 		 */
 		private function checkVersionJoomla() : bool
 		{
@@ -116,7 +122,6 @@
 		 *
 		 * @return bool
 		 * @throws Exception
-		 * @since version
 		 */
 		private function checkVersionPhp() : bool
 		{
@@ -135,7 +140,6 @@
 		 *
 		 * @return void
 		 * @throws Exception
-		 * @since version
 		 */
 		private function enableExtension() : void
 		{

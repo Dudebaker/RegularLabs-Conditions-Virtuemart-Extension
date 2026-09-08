@@ -1,7 +1,6 @@
 <?php
 	/**
 	 * @package         RegularLabs-Conditions-Virtuemart-Extension
-	 * @subpackage      System.regular_labs_conditions_virtuemart_extension
 	 *
 	 * @copyright   (C) Open Source Matters, Inc.
 	 * @license         GNU General Public License version 2 or later
@@ -9,124 +8,141 @@
 	
 	namespace Joomla\Plugin\System\RegularLabsConditionsVirtuemartExtension\Helper;
 	
-	use Joomla\CMS\Installer\Installer;
 	use RuntimeException;
 	
 	defined('_JEXEC') or die;
 	
 	/**
-	 * Handles the core file extension with custom code
+	 * Injects hooks into core files on install/update (hash-checked) or force.
 	 *
 	 * @since version
 	 */
 	class CoreFileExtenderHelper
 	{
-		#region Public
+		private static bool $forceApply = false;
+		
+		private static mixed $currentInstaller = null;
+		
 		/**
-		 * Method to find overrides which have to be executed
-		 *
-		 * @param \Joomla\CMS\Installer\Installer|null $installer
-		 * @param bool                                 $force
-		 *
-		 * @since        version
-		 * @noinspection PhpMissingParamTypeInspection
+		 * @var array<string, string>
 		 */
-		public static function checkOverrides($installer = null, bool $force = false) : void
+		private static array $fileHashCache = [];
+		
+		/**
+		 * Force-apply all patches (plugin force param / own install).
+		 *
+		 * @since version
+		 */
+		public static function ensureOverrides() : void
 		{
-			$directory            = __DIR__ . DIRECTORY_SEPARATOR . 'CoreFileExtender';
-			$coreFilExtenderFiles = scandir($directory);
+			self::checkOverrides(null, true);
+		}
+		
+		/**
+		 * Run extenders for an installer event (or forced).
+		 *
+		 * @param mixed $installer
+		 * @param bool  $force
+		 *
+		 * @since version
+		 */
+		public static function checkOverrides(mixed $installer = null, bool $force = false) : void
+		{
+			self::$forceApply       = $force;
+			self::$currentInstaller = $installer;
+			self::$fileHashCache    = [];
 			
-			foreach ($coreFilExtenderFiles as $coreFilExtenderFile)
+			try
 			{
-				if (!str_ends_with($coreFilExtenderFile, '.php'))
+				$directory = __DIR__ . DIRECTORY_SEPARATOR . 'CoreFileExtender';
+				$files     = @scandir($directory);
+				
+				if ($files === false)
 				{
-					continue;
+					return;
 				}
 				
-				require_once $directory . DIRECTORY_SEPARATOR . $coreFilExtenderFile;
-				
-				$functionName = substr($coreFilExtenderFile, 0, -4);
-				
-				if (!function_exists($functionName))
+				foreach ($files as $file)
 				{
-					continue;
+					if (!str_ends_with($file, '.php'))
+					{
+						continue;
+					}
+					
+					require_once $directory . DIRECTORY_SEPARATOR . $file;
+					
+					$functionName = substr($file, 0, -4);
+					
+					if (function_exists($functionName))
+					{
+						$functionName();
+					}
 				}
-				
-				$functionName($installer, $force);
+			} finally
+			{
+				self::$forceApply       = false;
+				self::$currentInstaller = null;
 			}
 		}
-		#endregion
-		
-		#region FileExtender
 		
 		/**
-		 * Method to check if the installer is the correct one
-		 *
 		 * @param mixed $installer
 		 * @param array $extensionName
 		 *
 		 * @return bool
-		 *
 		 * @since version
 		 */
 		public static function checkInstaller(mixed $installer, array $extensionName) : bool
 		{
-			$installerExtensionNames   = [];
-			$installerExtensionNames[] = (string)$installer->manifest->name;
-			
-			$additionalFiles   = [];
-			$additionalFiles[] = 'files';
-			$additionalFiles[] = 'files_j3';
-			$additionalFiles[] = 'files_j4';
-			$additionalFiles[] = 'files_j5';
-			
-			foreach ($additionalFiles as $additionalFile)
-			{
-				if (property_exists($installer->manifest, $additionalFile))
-				{
-					foreach ($installer->manifest->$additionalFile->file as $file)
-					{
-						$installerExtensionNames[] = (string)$file;
-					}
-				}
-			}
-			
-			$common = array_intersect(
-				array_map('strtolower', $installerExtensionNames),
-				array_map('strtolower', $extensionName)
-			);
-			
-			if (empty($common))
+			if (!is_object($installer) || !property_exists($installer, 'manifest') || $installer->manifest === null)
 			{
 				return false;
 			}
 			
-			return true;
+			$installerExtensionNames   = [];
+			$installerExtensionNames[] = (string)$installer->manifest->name;
+			
+			foreach (['files', 'files_j3', 'files_j4', 'files_j5'] as $additionalFile)
+			{
+				if (!property_exists($installer->manifest, $additionalFile))
+				{
+					continue;
+				}
+				
+				foreach ($installer->manifest->$additionalFile->file as $file)
+				{
+					$installerExtensionNames[] = (string)$file;
+				}
+			}
+			
+			return !empty(array_intersect(
+				array_map('strtolower', $installerExtensionNames),
+				array_map('strtolower', $extensionName)
+			));
 		}
 		
 		/**
-		 * Method to handle the core file extension with custom code
+		 * Inject custom code before/after an anchor line in a core file.
 		 *
-		 * @param Installer|null $installer
-		 * @param array          $extensionName
-		 * @param string         $extendName
-		 * @param array          $extendContent
-		 * @param string         $extendFile
-		 * @param string|null    $extendBefore
-		 * @param string|null    $extendAfter
-		 * @param float          $extendVersion
-		 * @param bool           $force
+		 * @param array       $extensionNames
+		 * @param string      $extendName
+		 * @param array       $extendContent
+		 * @param string      $extendFile Relative to JPATH_ROOT
+		 * @param string|null $extendBefore
+		 * @param string|null $extendAfter
+		 * @param float       $extendVersion
 		 *
-		 * @since        version
+		 * @since version
 		 */
-		public static function handleCoreFileExtender(mixed $installer, array $extensionName, string $extendName, array $extendContent, string $extendFile, string $extendBefore = null, string $extendAfter = null, float $extendVersion = 1, bool $force = false) : void
+		public static function handleCoreFileExtender(array   $extensionNames, string $extendName, array $extendContent, string $extendFile,
+		                                              ?string $extendBefore = null, ?string $extendAfter = null, float $extendVersion = 1) : void
 		{
 			if (empty($extendBefore) && empty($extendAfter))
 			{
 				return;
 			}
 			
-			if (!$force && !self::checkInstaller($installer, $extensionName))
+			if (!self::$forceApply && !self::checkInstaller(self::$currentInstaller, $extensionNames))
 			{
 				return;
 			}
@@ -138,10 +154,9 @@
 				return;
 			}
 			
-			$fileContent              = file_get_contents($extendFile);
-			$extenderPrefix           = 'Core File Extender';
+			$extenderPrefix = 'Core File Extender';
 			
-			if(str_ends_with(strtolower($extendFile), '.xml'))
+			if (str_ends_with(strtolower($extendFile), '.xml'))
 			{
 				$extendNameVersion        = "<!-- $extenderPrefix - $extendName # v$extendVersion -->";
 				$extendNameWithoutVersion = "<!-- $extenderPrefix - $extendName -->";
@@ -153,31 +168,348 @@
 				$extendContentEnd         = "### END $extenderPrefix ###";
 			}
 			
+			if (self::patchStateMatches($extendFile, $extendNameVersion))
+			{
+				return;
+			}
+			
+			$fileContent = file_get_contents($extendFile);
+			
+			if ($fileContent === false)
+			{
+				return;
+			}
+			
 			if (str_contains($fileContent, $extendNameVersion))
 			{
-				// override already in place
+				self::storePatchState($extendFile, $extendNameVersion);
+				
 				return;
 			}
 			
 			$fileLineSeparator = self::detectNewlineType($fileContent);
-			
-			$extendPadding = self::getCoreFileExtensionPadding($fileContent, $fileLineSeparator, $extendBefore, $extendAfter);
+			$extendPadding     = self::getCoreFileExtensionPadding($fileContent, $fileLineSeparator, $extendBefore, $extendAfter);
 			
 			if (str_contains($fileContent, $extendPadding . $extendNameWithoutVersion))
 			{
-				$fileContent = self::removeCoreFileExtension($fileContent, $fileLineSeparator, $extendPadding . $extendNameWithoutVersion, $extendContentEnd, !empty($extendAfter));
+				$fileContent = self::removeCoreFileExtension(
+					$fileContent,
+					$fileLineSeparator,
+					$extendPadding . $extendNameWithoutVersion,
+					$extendContentEnd,
+					!empty($extendAfter)
+				);
 			}
 			
-			self::addCoreFileExtension($extendFile, $fileContent, $fileLineSeparator, $extendNameVersion, $extendContent, $extendContentEnd, $extendPadding, $extendBefore, $extendAfter);
+			self::addCoreFileExtension(
+				$extendFile,
+				$fileContent,
+				$fileLineSeparator,
+				$extendNameVersion,
+				$extendContent,
+				$extendContentEnd,
+				$extendPadding,
+				$extendBefore,
+				$extendAfter
+			);
+			self::storePatchState($extendFile, $extendNameVersion);
 		}
 		
 		/**
-		 * Method to detect the new line type (\r\n, \r, \n)
+		 * Copy plugin-shipped files into a core component when missing or outdated.
+		 * Skips entirely when the last sync fingerprint still matches (no per-request copy walk).
 		 *
+		 * @param array  $extensionNames
+		 * @param string $source
+		 * @param string $destination
+		 *
+		 * @since version
+		 */
+		public static function handleFileCopy(array $extensionNames, string $source, string $destination) : void
+		{
+			if (!self::$forceApply && !self::checkInstaller(self::$currentInstaller, $extensionNames))
+			{
+				return;
+			}
+			
+			if ($source === '' || $destination === '' || !is_dir($source))
+			{
+				return;
+			}
+			
+			$fingerprint = self::getFileCopyFingerprint($source, $destination);
+			$statePath   = self::getFileCopyStatePath($source, $destination);
+			
+			if (is_file($statePath) && hash_equals($fingerprint, trim((string)file_get_contents($statePath))))
+			{
+				return;
+			}
+			
+			self::copyFilesRecursive($source, $destination);
+			
+			$hashDir = self::getHashDirectory();
+			
+			if (!is_dir($hashDir) && !mkdir($hashDir, 0755, true) && !is_dir($hashDir))
+			{
+				return;
+			}
+			
+			// Recompute after copy so dest stats are current
+			file_put_contents($statePath, self::getFileCopyFingerprint($source, $destination));
+		}
+		
+		/**
+		 * Fingerprint of a source tree + mirrored destination presence/size/mtime.
+		 * Uses stat only (no file content reads) for the per-request check.
+		 *
+		 * @param string $source
+		 * @param string $destination
+		 *
+		 * @return string
+		 * @since version
+		 */
+		private static function getFileCopyFingerprint(string $source, string $destination) : string
+		{
+			$entries = [];
+			self::collectFileCopyFingerprint($source, $destination, '', $entries);
+			ksort($entries);
+			
+			return sha1(serialize($entries));
+		}
+		
+		/**
+		 * @param string               $sourceRoot
+		 * @param string               $destinationRoot
+		 * @param string               $relative
+		 * @param array<string,string> $entries
+		 *
+		 * @since version
+		 */
+		private static function collectFileCopyFingerprint(string $sourceRoot, string $destinationRoot, string $relative, array &$entries) : void
+		{
+			$path = $relative === '' ? $sourceRoot : $sourceRoot . '/' . $relative;
+			$dir  = @opendir($path);
+			
+			if ($dir === false)
+			{
+				return;
+			}
+			
+			while (($file = readdir($dir)) !== false)
+			{
+				if ($file === '.' || $file === '..')
+				{
+					continue;
+				}
+				
+				$rel        = $relative === '' ? $file : $relative . '/' . $file;
+				$sourcePath = $sourceRoot . '/' . $rel;
+				$destPath   = $destinationRoot . '/' . $rel;
+				
+				if (is_dir($sourcePath))
+				{
+					self::collectFileCopyFingerprint($sourceRoot, $destinationRoot, $rel, $entries);
+					
+					continue;
+				}
+				
+				if (!is_file($sourcePath))
+				{
+					continue;
+				}
+				
+				$sourceStat = @stat($sourcePath);
+				$destStat   = is_file($destPath) ? @stat($destPath) : false;
+				
+				$entries[$rel] = implode(
+					'|',
+					[
+						(string)($sourceStat['size'] ?? 0),
+						(string)($sourceStat['mtime'] ?? 0),
+						$destStat === false ? 'missing' : (string)$destStat['size'],
+						$destStat === false ? '0' : (string)$destStat['mtime'],
+					]
+				);
+			}
+			
+			closedir($dir);
+		}
+		
+		/**
+		 * @param string $source
+		 * @param string $destination
+		 *
+		 * @return string
+		 * @since version
+		 */
+		private static function getFileCopyStatePath(string $source, string $destination) : string
+		{
+			return self::getHashDirectory() . DIRECTORY_SEPARATOR . sha1($source . "\0" . $destination) . '.copy.hash';
+		}
+		
+		/**
+		 * @param string $source
+		 * @param string $destination
+		 *
+		 * @since version
+		 */
+		private static function copyFilesRecursive(string $source, string $destination) : void
+		{
+			if (!is_dir($destination) && !mkdir($destination, 0755, true) && !is_dir($destination))
+			{
+				throw new RuntimeException(sprintf('Directory "%s" was not created', $destination));
+			}
+			
+			$dir = opendir($source);
+			
+			if ($dir === false)
+			{
+				return;
+			}
+			
+			while (($file = readdir($dir)) !== false)
+			{
+				if ($file === '.' || $file === '..')
+				{
+					continue;
+				}
+				
+				$sourcePath = $source . '/' . $file;
+				$destPath   = $destination . '/' . $file;
+				
+				if (is_dir($sourcePath))
+				{
+					self::copyFilesRecursive($sourcePath, $destPath);
+					
+					continue;
+				}
+				
+				if (!is_file($sourcePath))
+				{
+					continue;
+				}
+				
+				$sourceHash = (string)sha1_file($sourcePath);
+				
+				if (is_file($destPath) && hash_equals($sourceHash, (string)sha1_file($destPath)))
+				{
+					continue;
+				}
+				
+				if (!copy($sourcePath, $destPath))
+				{
+					closedir($dir);
+					
+					throw new RuntimeException(sprintf('Failed to copy "%s"', $sourcePath));
+				}
+				
+				chmod($destPath, 0644);
+				self::invalidateOpcache($destPath);
+			}
+			
+			closedir($dir);
+		}
+		
+		/**
+		 * @param string $extendFile Absolute path
+		 * @param string $extendNameVersion
+		 *
+		 * @return bool
+		 * @since version
+		 */
+		private static function patchStateMatches(string $extendFile, string $extendNameVersion) : bool
+		{
+			$stateFile = self::getPatchStatePath($extendFile, $extendNameVersion);
+			
+			if (!is_file($stateFile))
+			{
+				return false;
+			}
+			
+			$stored = trim((string)file_get_contents($stateFile));
+			
+			if ($stored === '')
+			{
+				return false;
+			}
+			
+			return hash_equals($stored, self::getCoreFileHash($extendFile));
+		}
+		
+		/**
+		 * @param string $extendFile Absolute path
+		 * @param string $extendNameVersion
+		 *
+		 * @since version
+		 */
+		private static function storePatchState(string $extendFile, string $extendNameVersion) : void
+		{
+			$hashDir = self::getHashDirectory();
+			
+			if (!is_dir($hashDir) && !mkdir($hashDir, 0755, true) && !is_dir($hashDir))
+			{
+				return;
+			}
+			
+			unset(self::$fileHashCache[$extendFile]);
+			$hash = self::getCoreFileHash($extendFile);
+			file_put_contents(self::getPatchStatePath($extendFile, $extendNameVersion), $hash);
+		}
+		
+		/**
+		 * @param string $extendFile Absolute path
+		 *
+		 * @return string
+		 * @since version
+		 */
+		private static function getCoreFileHash(string $extendFile) : string
+		{
+			if (!isset(self::$fileHashCache[$extendFile]))
+			{
+				self::$fileHashCache[$extendFile] = (string)sha1_file($extendFile);
+			}
+			
+			return self::$fileHashCache[$extendFile];
+		}
+		
+		/**
+		 * @param string $extendFile Absolute path
+		 * @param string $extendNameVersion
+		 *
+		 * @return string
+		 * @since version
+		 */
+		private static function getPatchStatePath(string $extendFile, string $extendNameVersion) : string
+		{
+			return self::getHashDirectory() . DIRECTORY_SEPARATOR . sha1($extendFile . "\0" . $extendNameVersion) . '.hash';
+		}
+		
+		/**
+		 * @return string
+		 * @since version
+		 */
+		private static function getHashDirectory() : string
+		{
+			return __DIR__ . DIRECTORY_SEPARATOR . 'CoreFileExtender' . DIRECTORY_SEPARATOR . 'hashes';
+		}
+		
+		/**
+		 * @param string $file Absolute path
+		 *
+		 * @since version
+		 */
+		private static function invalidateOpcache(string $file) : void
+		{
+			if (function_exists('opcache_invalidate'))
+			{
+				@opcache_invalidate($file, true);
+			}
+		}
+		
+		/**
 		 * @param string $content
 		 *
 		 * @return string
-		 *
 		 * @since version
 		 */
 		private static function detectNewlineType(string $content) : string
@@ -206,18 +538,15 @@
 		}
 		
 		/**
-		 * Method to detect the spacing of the line where the custom code will be added
-		 *
 		 * @param string      $fileContent
 		 * @param string      $fileLineSeparator
 		 * @param string|null $extendBefore
 		 * @param string|null $extendAfter
 		 *
 		 * @return string
-		 *
 		 * @since version
 		 */
-		private static function getCoreFileExtensionPadding(string $fileContent, string $fileLineSeparator, string $extendBefore = null, string $extendAfter = null) : string
+		private static function getCoreFileExtensionPadding(string $fileContent, string $fileLineSeparator, ?string $extendBefore = null, ?string $extendAfter = null) : string
 		{
 			$textTillExtendBeforeAfter = substr($fileContent, 0, strpos($fileContent, $extendBefore ?? $extendAfter));
 			
@@ -225,8 +554,6 @@
 		}
 		
 		/**
-		 * Method to add the custom-code into the file on the position of $extendBefore or $extendAfter
-		 *
 		 * @param string      $extendFile
 		 * @param string      $fileContent
 		 * @param string      $fileLineSeparator
@@ -239,7 +566,8 @@
 		 *
 		 * @since version
 		 */
-		private static function addCoreFileExtension(string $extendFile, string $fileContent, string $fileLineSeparator, string $extendNameVersion, array $extendContent, string $extendContentEnd, string $extendPadding, string $extendBefore = null, string $extendAfter = null) : void
+		private static function addCoreFileExtension(string $extendFile, string $fileContent, string $fileLineSeparator, string $extendNameVersion,
+		                                             array  $extendContent, string $extendContentEnd, string $extendPadding, ?string $extendBefore = null, ?string $extendAfter = null) : void
 		{
 			$extendText = '';
 			
@@ -262,13 +590,12 @@
 				$extendText .= $fileLineSeparator . $extendPadding . $extendBefore;
 			}
 			
-			$fileContents = str_replace($extendPadding . ($extendBefore ?? $extendAfter), $extendText, $fileContent);
-			file_put_contents($extendFile, $fileContents);
+			file_put_contents($extendFile, str_replace($extendPadding . ($extendBefore ?? $extendAfter), $extendText, $fileContent));
+			unset(self::$fileHashCache[$extendFile]);
+			self::invalidateOpcache($extendFile);
 		}
 		
 		/**
-		 * Method to remove the custom-code block
-		 *
 		 * @param string $fileContent
 		 * @param string $fileLineSeparator
 		 * @param string $extendName
@@ -276,7 +603,6 @@
 		 * @param bool   $extendAfter
 		 *
 		 * @return string
-		 *
 		 * @since version
 		 */
 		private static function removeCoreFileExtension(string $fileContent, string $fileLineSeparator, string $extendName, string $extendContentEnd, bool $extendAfter = false) : string
@@ -294,62 +620,4 @@
 			
 			return str_replace($oldVersionText, '', $fileContent);
 		}
-		#endregion
-		
-		#region File Copy
-		public static function handleFileCopy(mixed $installer, array $extensionName, string $source, string $destination, bool $force = false) : void
-		{
-			if (empty($source) || empty($destination))
-			{
-				return;
-			}
-			
-			if (!$force && !self::checkInstaller($installer, $extensionName))
-			{
-				return;
-			}
-			
-			self::copyFilesRecursive($source, $destination);
-		}
-		
-		public static function copyFilesRecursive(string $source, string $destination) : void
-		{
-			if (!is_dir($destination) && !mkdir($destination, 0755, true) && !is_dir($destination))
-			{
-				throw new RuntimeException(sprintf('Directory "%s" was not created', $destination));
-			}
-			
-			$dir = opendir($source);
-			
-			while (($file = readdir($dir)) !== false)
-			{
-				if ($file === '.' || $file === '..')
-				{
-					continue;
-				}
-				
-				$sourcePath = $source . '/' . $file;
-				$destPath   = $destination . '/' . $file;
-				
-				if (is_dir($sourcePath))
-				{
-					self::copyFilesRecursive($sourcePath, $destPath);
-				} else
-				{
-					if (is_file($sourcePath))
-					{
-						if (copy($sourcePath, $destPath))
-						{
-							chmod($destPath, 0644);
-						} else
-						{
-							throw new RuntimeException(sprintf('Failed to copy "%s" ', $sourcePath));
-						}
-					}
-				}
-			}
-			
-			closedir($dir);
-		}
-		#endregion
 	}

@@ -1,23 +1,21 @@
 <?php
 	/**
 	 * @package         RegularLabs-Conditions-Virtuemart-Extension
-	 * @subpackage      System.regular_labs_conditions_virtuemart_extension
 	 *
 	 * @copyright   (C) Open Source Matters, Inc.
 	 * @license         GNU General Public License version 2 or later
 	 */
 	
+	/** @noinspection PhpUnused */
+	
 	namespace Joomla\Plugin\System\RegularLabsConditionsVirtuemartExtension\Extension;
 	
-	use Joomla\CMS\Factory;
-	use Joomla\CMS\Language\Text;
-	use Joomla\Database\DatabaseAwareTrait;
-	use Joomla\Database\DatabaseInterface;
-	use Joomla\Plugin\System\RegularLabsConditionsVirtuemartExtension\Helper\CoreFileExtenderHelper;
 	use Joomla\CMS\Installer\Installer;
 	use Joomla\CMS\Plugin\CMSPlugin;
+	use Joomla\Database\DatabaseAwareTrait;
 	use Joomla\Event\Event;
 	use Joomla\Event\SubscriberInterface;
+	use Joomla\Plugin\System\RegularLabsConditionsVirtuemartExtension\Helper\CoreFileExtenderHelper;
 	
 	defined('_JEXEC') or die;
 	
@@ -26,9 +24,9 @@
 		use DatabaseAwareTrait;
 		
 		#region Joomla Events
+		
 		/**
 		 * {@inheritdoc}
-		 * @since version
 		 */
 		public static function getSubscribedEvents() : array
 		{
@@ -40,113 +38,100 @@
 		}
 		
 		/**
-		 * Listener for the `onAfterInitialise` event
-		 *
-		 * This event is triggered after the framework has loaded and the application initialize method has been called.
-		 *
-		 * @return  void
-		 *
-		 * @since version
+		 * @return void
 		 */
 		public function onAfterInitialise() : void
 		{
-			$this->CheckCoreFileExtender();
+			if ((int)$this->params->get('check_core_extension', 0) === 1 && $this->getApplication()?->isClient('administrator'))
+			{
+				CoreFileExtenderHelper::ensureOverrides();
+				$this->disableCheckCoreExtension();
+			}
 		}
-
+		
 		/**
-		 * Listener for the `onExtensionAfterUpdate` event
+		 * @param mixed $installer
 		 *
-		 * Executed after update of an extension (but not always?)
-		 * Check if any overrides have to be added
-		 *
-		 * @param   \Joomla\CMS\Installer\Installer|null  $installer  Installer object
-		 *
-		 * @return  void
-		 *
-		 * @since version
+		 * @return void
+		 * @since        version
+		 * @noinspection PhpMissingParamTypeInspection
 		 */
-		public function onExtensionAfterUpdate(Installer $installer = null) : void
+		public function onExtensionAfterUpdate($installer = null) : void
 		{
+			if (CoreFileExtenderHelper::checkInstaller($installer, ['PLG_SYSTEM_REGULARLABS_CONDITIONS_VIRTUEMART_EXTENSION']))
+			{
+				CoreFileExtenderHelper::checkOverrides(null, true);
+				
+				return;
+			}
+			
 			CoreFileExtenderHelper::checkOverrides($installer);
 		}
 		
 		/**
-		 * Listener for the `onInstallerAfterInstaller` event
+		 * @param Event|null $event
 		 *
-		 * Executed after installation of an extension (or update via install instead of update in backend)
-		 * Check if any overrides have to be added
-		 *
-		 * @param   \Joomla\Event\Event|null  $event
-		 *
-		 * @since version
+		 * @return void
 		 */
 		public function onInstallerAfterInstaller(Event $event = null) : void
 		{
-			$arguments = $event->getArguments();
+			if ($event === null)
+			{
+				return;
+			}
 			
-			foreach ($arguments as $argument)
+			foreach ($event->getArguments() as $argument)
 			{
 				if ($argument instanceof Installer)
 				{
-					CoreFileExtenderHelper::checkOverrides($argument);
+					if (CoreFileExtenderHelper::checkInstaller($argument, ['PLG_SYSTEM_REGULARLABS_CONDITIONS_VIRTUEMART_EXTENSION']))
+					{
+						CoreFileExtenderHelper::checkOverrides(null, true);
+					} else
+					{
+						CoreFileExtenderHelper::checkOverrides($argument);
+					}
+					
 					break;
 				}
 			}
 		}
 		
 		/**
-		 * Listener for the `install` event
-		 *
-		 * Executed after installation of this extension
-		 * Check if any overrides have to be added
-		 *
-		 * @param   $parent
+		 * @param mixed $parent
 		 *
 		 * @return true
-		 * @since version
+		 * @noinspection PhpMissingParamTypeInspection
+		 * @noinspection PhpUnusedParameterInspection
 		 */
 		public function install($parent) : bool
 		{
-			CoreFileExtenderHelper::checkOverrides($parent);
-			
-			return true;
-		}
-		#endregion
-
-		#region Request Handling
-		
-		/**
-		 * Checks if the core file extension exists only if the plugin parameter is set to do so
-		 *
-		 * @since version
-		 */
-		public function CheckCoreFileExtender() : bool
-		{
-			if (!$this->getApplication()?->isClient('administrator'))
-			{
-				return false;
-			}
-			
-			$checkCoreExtension = $this->params->get('check_core_extension', 1);
-			
-			if (!$checkCoreExtension)
-			{
-				return false;
-			}
-			
 			CoreFileExtenderHelper::checkOverrides(null, true);
 			
-			$db    = Factory::getContainer()->get(DatabaseInterface::class);
-			$query = $db->getQuery(true)
-			            ->update($db->quoteName('#__extensions'))
-			            ->set($db->quoteName('params') . ' = ' . $db->quote(json_encode(['check_core_extension' => 0])))
-			            ->where($db->quoteName('element') . ' = ' . $db->quote('regularlabs_conditions_virtuemart_extension'))
-			            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
-			            ->where($db->quoteName('folder') . ' = ' . $db->quote('system'));
-			$db->setQuery($query);
-			$db->execute();
-			
 			return true;
 		}
-		#endregion		
+		
+		/**
+		 * One-shot: clear check_core_extension after a manual admin re-applying.
+		 *
+		 */
+		private function disableCheckCoreExtension() : void
+		{
+			$params                         = $this->params->toArray();
+			$params['check_core_extension'] = '0';
+			$this->params->loadArray($params);
+			
+			$db = $this->getDatabase();
+			
+			/** @noinspection JsonEncodingApiUsageInspection */
+			
+			$query = $db->getQuery(true)
+			            ->update($db->quoteName('#__extensions'))
+			            ->set($db->quoteName('params') . ' = ' . $db->quote(json_encode($params)))
+			            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+			            ->where($db->quoteName('folder') . ' = ' . $db->quote('system'))
+			            ->where($db->quoteName('element') . ' = ' . $db->quote('regularlabs_conditions_virtuemart_extension'));
+			$db->setQuery($query)->execute();
+		}
+		#endregion
 	}
